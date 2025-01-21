@@ -12,7 +12,6 @@ const corsOptions = {
 router.post('/:PageID', cors(corsOptions), async (req, res) => {
   const { PageID } = req.params;
   const { userID } = req.body;
-   
   try {
     const data = await Data.find({userID: userID, pageID: PageID});
     let formdata = null;
@@ -51,17 +50,35 @@ router.post('/multipage', cors(corsOptions), async (req, res) => {
   }
 });
 
-// router.get('/:userID', cors(corsOptions), async (req, res) => {
-//   const { userID } = req.params; 
-   
-//   try{
-//       const data = await User.findById(JSON.parse(userID).id); 
-//       res.status(200).json(data.fullname);
-//   }catch (error) {
-//       console.error('Error during user data reading: ', error);
-//       res.status(500).json({ error: 'An error occurred while retrieving the data of user' });
-//   }
 
-// });
+router.post('/faculty/list', cors(corsOptions), async (req, res) => {
+  const { department } = req.body;
+  try {
+    const facultyMembers = await User.find({
+      department,
+      role: 'faculty'
+    }).select('fullname email username');
+    console.log(facultyMembers);
+    res.status(200).json(facultyMembers);
+  } catch (error) {
+    console.error('Error fetching faculty list:', error); 
+    res.status(500).json({ error: 'An error occurred while retrieving faculty list' });
+  }
+});
+
+
+router.post('/faculty/details', cors(corsOptions), async (req, res) => {
+  const { userId } = req.body;
+  try {
+    const data = await Data.find({userID: userId});
+    res.status(200).json(data);
+  
+  } catch (error) {
+    console.error('Error during form data reading: ', error);
+    res.status(500).json({ error: 'An error occurred while retrieving the data' });
+  }
+});
+
+
 
 module.exports = router;

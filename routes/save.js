@@ -10,6 +10,38 @@ const corsOptions = {
   origin: 'http://localhost:5173'
 };    
 
+router.post('/delete/:PageID/:id', cors(corsOptions), async (req, res) => {
+ try {
+   const { PageID, id } = req.params;
+   const { userID } = req.body;
+   
+   const doc = await Data.findOne({ userID, pageID: PageID });
+   
+   if (!doc) {
+     return res.status(404).json({ error: 'Document not found' });
+   }
+   
+
+   const fileID = doc.formData[id][1].fileUploaded;
+   //console.log(fileID);
+   if (fileID) {
+     await File.deleteOne({ _id: fileID });
+   }
+   
+   doc.formData.splice(id, 1); 
+   
+   await doc.save();
+   
+   res.status(200).json({ 
+     message: 'Record and associated file deleted successfully', 
+     remainingRecords: doc.formdata 
+   });
+
+ } catch (error) {
+   console.error('Error during record deletion: ', error);
+   res.status(500).json({ error: 'An error occurred while deleting the record' });
+ }
+});
 
 router.post('/:PageID', cors(corsOptions), async (req, res) => {
     try {
