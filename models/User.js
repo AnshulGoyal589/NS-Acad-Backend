@@ -6,7 +6,14 @@ const userSchema = new mongoose.Schema({
   fullname:String,
   username:String, 
   department:String,
-  role: String
+  role: String,
+  classes: [
+    {
+      branch: String,
+      section: String,
+      year: Number 
+    }
+  ]
 
 });
 

@@ -117,4 +117,50 @@ router.get('/protected', authenticateToken, (req, res) => {
   res.json({ message: 'Protected route accessed', user: req.user });
 });
 
+router.post("/addClass", cors(corsOptions), async (req, res) => {
+  try {
+    const { userId, branch, section, year } = req.body;
+  
+    if (!userId || !branch || !section || !year) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+ 
+    user.classes.push({ branch, section, year });
+    await user.save();
+
+    res.status(200).json({ message: "Class added successfully", user });
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
+router.delete("/deleteClass", cors(corsOptions), async (req, res) => {
+  try {
+    const { userId, classId } = req.body; 
+    if (!userId || !classId) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+ 
+    user.classes = user.classes.filter(cls => cls._id.toString() !== classId);
+
+    await user.save();
+
+    res.status(200).json({ message: "Class deleted successfully", user });
+  } catch (error) {
+    console.error("Error deleting class:", error);
+    res.status(500).json({ message: "Internal server error", error });
+  }
+});
+
 module.exports = router;
