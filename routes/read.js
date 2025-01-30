@@ -66,6 +66,23 @@ router.post('/faculty/list', cors(corsOptions), async (req, res) => {
   }
 });
 
+router.get('/classes', async (req, res) => {
+  try {
+    const users = await User.find({}, 'classes');
+    
+    const uniqueClasses = Array.from(new Set(
+      users.flatMap(user => user.classes.map(cls => 
+        JSON.stringify({ branch: cls.branch, section: cls.section, year: cls.year })
+      ))
+    )).map(str => JSON.parse(str));
+
+    res.json(uniqueClasses);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching classes', error: error.message });
+  }
+});
+
+
 
 router.post('/faculty/details', cors(corsOptions), async (req, res) => {
   const { userId } = req.body;
