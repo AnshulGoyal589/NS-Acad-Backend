@@ -59,11 +59,13 @@ const authApi = require('./routes/auth.js');
 const saveApi = require('./routes/save.js');
 const readApi = require('./routes/read.js'); 
 const fileApi = require('./routes/file.js');
+const updateApi = require('./routes/update.js');
 
 app.use('/auth', authApi);
 app.use('/save', saveApi);
 app.use('/read', readApi);
 app.use('/file', fileApi);
+app.use('/update', updateApi);
 
 
  

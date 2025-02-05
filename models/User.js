@@ -7,13 +7,19 @@ const userSchema = new mongoose.Schema({
   username:String, 
   department:String,
   role: String,
-  classes: [
-    {
-      branch: String,
-      section: String,
-      year: Number 
-    }
-  ]
+  classes: [{
+    branch: String,
+    section: String,
+    year: Number,
+    subjects: [{
+      code: String,
+      name: String,
+      assessments: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Assessment'
+      }]
+    }]
+  }]
 
 });
 
