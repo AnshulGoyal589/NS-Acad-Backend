@@ -72,7 +72,12 @@ router.get('/classes', async (req, res) => {
     
     const uniqueClasses = Array.from(new Set(
       users.flatMap(user => user.classes.map(cls => 
-        JSON.stringify({ branch: cls.branch, section: cls.section, year: cls.year })
+        JSON.stringify({ 
+          branch: cls.branch, 
+          section: cls.section, 
+          year: cls.year,
+          subjects: cls.subjects || []
+        })
       ))
     )).map(str => JSON.parse(str));
 
@@ -81,6 +86,7 @@ router.get('/classes', async (req, res) => {
     res.status(500).json({ message: 'Error fetching classes', error: error.message });
   }
 });
+
 
 
 
