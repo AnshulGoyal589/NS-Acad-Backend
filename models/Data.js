@@ -3,8 +3,9 @@ const mongoose = require('mongoose');
 
 const dataSchema = new mongoose.Schema({
   userID: String, 
-  pageID:String,
-  formData:[[mongoose.Schema.Types.Mixed]]
+  pageID: String,
+  year: Number, 
+  formData: [[mongoose.Schema.Types.Mixed]]
 });
 
 

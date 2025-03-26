@@ -14,9 +14,9 @@ const corsOptions = {
 router.post("/delete/:PageID/:id", cors(corsOptions), async (req, res) => {
   try {
     const { PageID, id } = req.params;
-    const { userID } = req.body;
+    const { userID, year } = req.body;
 
-    const doc = await Data.findOne({ userID, pageID: PageID });
+    const doc = await Data.findOne({ userID, pageID: PageID, year });
 
     if (!doc) {
       return res.status(404).json({ error: "Document not found" });
@@ -34,7 +34,7 @@ router.post("/delete/:PageID/:id", cors(corsOptions), async (req, res) => {
 
     res.status(200).json({
       message: "Record and associated file deleted successfully",
-      remainingRecords: doc.formdata,
+      remainingRecords: doc.formData,
     });
   } catch (error) {
     console.error("Error during record deletion: ", error);
@@ -47,9 +47,12 @@ router.post("/delete/:PageID/:id", cors(corsOptions), async (req, res) => {
 router.post("/:PageID", cors(corsOptions), async (req, res) => {
   try {
     const { PageID } = req.params;
-    const { userID, data } = req.body;
+    const { userID, data, year } = req.body;
 
-    let doc = await Data.findOne({ userID, pageID: PageID });
+    // Default to current year if not provided
+    const academicYear = year || new Date().getFullYear();
+
+    let doc = await Data.findOne({ userID, pageID: PageID, year: academicYear });
 
     if (doc) {
       doc.formData.push(data);
@@ -58,6 +61,7 @@ router.post("/:PageID", cors(corsOptions), async (req, res) => {
       doc = new Data({
         pageID: PageID,
         userID: userID,
+        year: academicYear,
         formData: [data],
       });
       await doc.save();
