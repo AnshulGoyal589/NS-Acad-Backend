@@ -1,179 +1,107 @@
+// models/Assessment.js
 const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
-const TMSMarkSchema = new mongoose.Schema({
-  type: {
-    type: String,
-    enum: ['Tutorial', 'MiniProject', 'SurpriseTest'],
-    required: true
-  },
-  marksObtained: Number,
-  maxMarks: Number,
-  date: Date,
-  description: String,
-  coNumber: String 
-});
+// Sub-schema for individual parts of a question (TMS/TES)
+const QuestionPartSchema = new Schema({
+    maxMarks: Number,
+    coNumber: String, // e.g., 'CO1', 'CO2'
+    marksObtained: Number // Could be -1 for TES 'not attempted'
+}, { _id: false });
 
-const TCAMarkSchema = new mongoose.Schema({
-  assessmentNumber: {
-    type: Number,
-    enum: [1, 2, 3],
-    required: true
-  },
-  questionMarks: [{
-    questionNumber: Number,
-    parts: [{
-      partNumber: Number,
-      maxMarks: Number,
-      marksObtained: Number,
-      coNumber: String
-    }]
-  }],
-  totalMarks: Number,
-  date: Date 
-});
+// Sub-schema for TMS questions
+const TmsQuestionSchema = new Schema({
+    partA: QuestionPartSchema,
+    partB: QuestionPartSchema
+}, { _id: false });
 
-const TESSchema = new mongoose.Schema({
-  surveyDate: Date,
-  responses: [{
-    questionNumber: Number,
-    rating: Number,
-    coNumber: String
-  }],
-  comments: String,
-  overallRating: Number
-});
+// Sub-schema for TES questions
+const TesQuestionSchema = new Schema({
+    partA: QuestionPartSchema,
+    partB: QuestionPartSchema,
+    partC: QuestionPartSchema
+}, { _id: false });
 
-const StudentAssessmentSchema = new mongoose.Schema({
-  rollNo: {
-    type: String,
-    required: true
-  },
-  name: {
-    type: String,
-    required: true
-  },
-  tmsMarks: [TMSMarkSchema],
-  tcaMarks: [TCAMarkSchema],
-  tesSurvey: TESSchema,
-  copoAttainment: [{
-    coNumber: String,
-    attainmentLevel: Number,
-    tmsContribution: Number,
-    tcaContribution: Number,
-    tesContribution: Number
-  }]
-});
+// Sub-schema for TCA marks distribution per part
+const TcaCoDistributionSchema = new Schema({}, { strict: false, _id: false }); // Allows dynamic keys like 'co1', 'co2'
 
-const CourseAssessmentSchema = new mongoose.Schema({
-  academicYear: {
-    type: String,
-    required: true
-  },
-  semester: {
-    type: Number,
-    required: true
-  },
-  branch: {
-    type: String,
-    required: true
-  },
-  section: {
-    type: String,
-    required: true
-  },
-  course: {
-    code: String,
-    name: String,
-    credits: Number
-  },
-  facultyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  numberOfStudents: Number,
-  
-  tmsConfig: {
-    tutorials: {
-      count: Number,
-      maxMarksEach: Number,
-      weightage: Number
+// Sub-schema for TCA marks for a specific part (e.g., q1p1)
+const TcaPartMarkSchema = new Schema({
+    value: Number, // Actual marks entered for the part
+    coDistribution: TcaCoDistributionSchema // Marks distributed per selected CO
+}, { _id: false });
+
+// Sub-schema for TCA marks for a single assessment (CT1 or CT2)
+const TcaAssessmentMarkSchema = new Schema({
+    assessmentNumber: Number, // 1 or 2
+    marks: { // Keys will be like 'q1p1', 'q1p2', 'q2p1', 'q2p2'
+        type: Map,
+        of: TcaPartMarkSchema
+    }
+}, { _id: false });
+
+
+// Sub-schema for individual student data within an assessment
+const StudentAssessmentSchema = new Schema({
+    rollNo: { type: String, required: true },
+    name: { type: String, required: true },
+    // Marks will vary based on assessment type
+    tmsMarks: [{ // Usually only one entry per assessment type
+        type: { type: String, enum: ['Tutorial', 'MiniProject', 'SurpriseTest'] }, // TMS type
+        questions: [TmsQuestionSchema] // Array of 5 questions
+    }],
+    tesMarks: [{ // Usually only one entry
+        questions: [TesQuestionSchema] // Array of 5 questions
+    }],
+    tcaMarks: [TcaAssessmentMarkSchema] // Can have entries for assessmentNumber 1 and 2
+}, { _id: false });
+
+
+// Main Assessment Schema
+const AssessmentSchema = new Schema({
+    facultyId: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    type: { type: String, enum: ['tms', 'tca', 'tes'], required: true },
+    assessmentNumber: { // Relevant for TCA (1, 2)
+        type: Number,
+        required: function() { return this.type === 'tca'; }
     },
-    miniProjects: {
-      count: Number,
-      maxMarksEach: Number,
-      weightage: Number
+    tmsType: { // Relevant for TMS
+        type: String,
+        enum: ['Tutorial', 'MiniProject', 'SurpriseTest'],
+         required: function() { return this.type === 'tms'; }
     },
-    surpriseTests: {
-      count: Number,
-      maxMarksEach: Number,
-      weightage: Number
+    subject: {
+        code: { type: String, required: true },
+        name: { type: String, required: true }
     },
-    coMapping: [{
-      assessmentType: String,
-      number: Number,
-      coNumber: String
-    }]
-  },
-  
-  tcaConfig: {
-    numberOfAssessments: {
-      type: Number,
-      default: 3
-    },
-    weightage: Number,
-    questionPatterns: [{
-      assessmentNumber: Number,
-      numberOfQuestions: Number,
-      marksPerQuestion: Number,
-      coMapping: [{
-        questionNumber: Number,
-        coNumber: String
-      }]
-    }]
-  },
-  
-  tesConfig: {
-    numberOfQuestions: Number,
-    weightage: Number,
-    coMapping: [{
-      questionNumber: Number,
-      coNumber: String
-    }]
-  },
-  
-  students: [StudentAssessmentSchema],
-  
-  courseOutcomes: [{
-    coNumber: String,
-    description: String,
-    targetAttainmentLevel: Number
-  }],
-  
-  overallAttainment: {
-    tmsAttainment: Number,
-    tcaAttainment: Number,
-    tesAttainment: Number,
-    finalAttainment: Number
-  },
-  
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
-  updatedAt: {
-    type: Date,
-    default: Date.now
-  }
+    academicYear: { type: String, required: true }, // e.g., "2023-2024"
+    semester: { type: Number, required: true }, // e.g., 5
+    branch: { type: String, required: true }, // e.g., "CSE"
+    section: { type: String, required: true }, // e.g., "A"
+
+    numberOfStudents: Number,
+    students: [StudentAssessmentSchema],
+
+    // Store the config/mapping used when saving this data
+    tmsConfig: { type: Schema.Types.Mixed }, // Store selectedCOs and other TMS config
+    tcaConfig: { type: Schema.Types.Mixed }, // Store tcaSelectedCOs and other TCA config
+    tesConfig: { type: Schema.Types.Mixed }, // Store selectedCOs and other TES config
+
+    // Add createdAt and updatedAt timestamps
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
 });
 
-CourseAssessmentSchema.pre('save', function(next) {
+// Middleware to update the 'updatedAt' field on save
+AssessmentSchema.pre('save', function(next) {
   this.updatedAt = Date.now();
   next();
 });
 
-const Assessment = mongoose.model('Assessment', CourseAssessmentSchema);
+// Add an index for efficient querying
+AssessmentSchema.index({ facultyId: 1, 'subject.code': 1, academicYear: 1, semester: 1, branch: 1, section: 1, type: 1, assessmentNumber: 1, tmsType: 1 }, { unique: true });
 
-module.exports = {
-  Assessment
-};
+
+const Assessment = mongoose.model('Assessment', AssessmentSchema);
+
+module.exports = Assessment;
