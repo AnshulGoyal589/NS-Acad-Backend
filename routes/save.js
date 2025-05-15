@@ -3,6 +3,7 @@ const router = express.Router();
 const cors = require("cors");
 const Data = require("../models/Data");
 const File = require("../models/File");
+const CoPoMapping = require("../models/CoPoMapping");
  
 
 require("dotenv").config();
@@ -43,7 +44,51 @@ router.post("/delete/:PageID/:id", cors(corsOptions), async (req, res) => {
       .json({ error: "An error occurred while deleting the record" });
   }
 });
+router.post('/co-po-mappings', async (req, res) => {
+  try {
+    const {
+      facultyId,
+      subjectCode,
+      subjectName,
+      academicYear,
+      semester,
+      branch,
+      section,
+      courseOutcomes
+    } = req.body;
+    console.log("CO-PO Mapping Data:", req.body);
+    // Create or update the mapping
+    const filter = { subjectCode, academicYear, semester, branch, section };
 
+    const update = {
+      facultyId,
+      subjectCode,
+      subjectName,
+      academicYear,
+      semester,
+      branch,
+      section,
+      courseOutcomes,
+      updatedAt: new Date()
+    };
+
+    const options = { upsert: true, new: true, setDefaultsOnInsert: true };
+
+    const doc = await CoPoMapping.findOneAndUpdate(filter, update, options);
+
+    res.status(200).json({
+      message: 'Data saved successfully',
+      doc
+    });
+
+  } catch (error) {
+    console.error('Error saving CO-PO Mapping:', error);
+    res.status(500).json({
+      message: 'Error saving CO-PO Mapping',
+      error: error.message
+    });
+  }
+});
 router.post("/:PageID", cors(corsOptions), async (req, res) => {
   try {
     const { PageID } = req.params;
@@ -74,6 +119,6 @@ router.post("/:PageID", cors(corsOptions), async (req, res) => {
 });
 
 
- 
+
 
 module.exports = router;

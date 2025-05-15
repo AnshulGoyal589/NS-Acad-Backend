@@ -3,6 +3,7 @@ const router = express.Router();
 const cors = require('cors');
 const Data = require('../models/Data');
 const User = require('../models/User');
+const CoPoMapping = require('../models/CoPoMapping');
 require('dotenv').config();
 
 const corsOptions = {
@@ -433,5 +434,51 @@ router.post('/hod/dashboard/documents', cors(corsOptions), async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch dashboard documents' });
   }
 });
+
+
+router.get('/co-po-mappings', async (req, res) => {
+  try {
+    const subjectCodeParam = req.query.subjectCode;
+
+    if (!subjectCodeParam) {
+      return res.status(400).json({ message: 'Subject code query parameter is required.' });
+    }
+
+    console.log('Searching for mappings with subjectCode:', subjectCodeParam);
+
+    const mappings = await CoPoMapping.find({ subjectCode: subjectCodeParam });
+
+    if (!mappings || mappings.length === 0) {
+      console.log('No mappings found for subject code:', subjectCodeParam);
+      return res.status(404).json({ message: `No CO-PO mappings found for subject code: ${subjectCodeParam}` });
+    }
+
+    console.log(`Found ${mappings.length} mapping(s) for subject code: ${subjectCodeParam}`);
+    res.status(200).json(mappings);
+
+  } catch (error) {
+    console.error('Error fetching CO-PO Mappings by subject code:', error);
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
+router.get('/copomap', async (req, res) => {
+  try {
+    const mappings = await CoPoMapping.find({}); // Fetches everything from the collection
+
+    if (!mappings || mappings.length === 0) {
+      return res.status(404).json({ message: 'No CO-PO mappings found in the database.' });
+    }
+
+    console.log(`Fetched ${mappings.length} CO-PO mapping(s) from database:`);
+    console.dir(mappings, { depth: null }); // Logs full structure
+
+    res.status(200).json(mappings); // Return all mappings to client
+  } catch (error) {
+    console.error('Error fetching all CO-PO mappings:', error);
+    res.status(500).json({ message: 'Internal Server Error', error: error.message });
+  }
+});
+
 
 module.exports = router;
