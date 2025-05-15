@@ -14,15 +14,30 @@ router.post('/:PageID', cors(corsOptions), async (req, res) => {
   const { PageID } = req.params;
   const { userID, year } = req.body;
   try {
-    // If year is provided, filter by year, otherwise get all data
+    // Build the query object
     const query = { userID: userID, pageID: PageID };
+    
+    // If year is provided, convert to number and add to query
     if (year) {
-      query.year = year;
+      query.year = parseInt(year, 10);
     }
     
+    console.log(`PageID: ${PageID}, UserID: ${userID}, Year: ${year}, Query:`, query);
+    
     const data = await Data.find(query);
-    let formdata = null;
-    if(data.length!=0) formdata = data[0].formData;
+    console.log(`Found Data:`, data);
+    
+    // Always return an array, even if no data is found
+    let formdata = [];
+    if (data.length > 0 && data[0].formData) {
+      formdata = data[0].formData;
+    }
+    
+    // Ensure we're returning an array
+    if (!Array.isArray(formdata)) {
+      formdata = [];
+    }
+    
     res.status(200).json(formdata);
   
   } catch (error) {

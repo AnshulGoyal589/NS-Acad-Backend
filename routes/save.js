@@ -16,22 +16,75 @@ router.post("/delete/:PageID/:id", cors(corsOptions), async (req, res) => {
   try {
     const { PageID, id } = req.params;
     const { userID, year } = req.body;
+    
+    // Convert id to number and validate
+    const recordIndex = parseInt(id, 10);
+    if (isNaN(recordIndex)) {
+      return res.status(400).json({ error: "Invalid record ID format" });
+    }
+    
+    // Ensure we have a year
+    const academicYear = year || new Date().getFullYear();
+    
+    console.log(`Deleting record - PageID: ${PageID}, recordIndex: ${recordIndex}, userID: ${userID}, year: ${academicYear}`);
 
-    const doc = await Data.findOne({ userID, pageID: PageID, year });
+    // Find the document
+    const doc = await Data.findOne({ userID, pageID: PageID, year: academicYear });
 
     if (!doc) {
+      console.log(`Document not found for userID: ${userID}, pageID: ${PageID}, year: ${academicYear}`);
       return res.status(404).json({ error: "Document not found" });
     }
-
-    const fileID = doc.formData[id][1].fileUploaded;
-    //console.log(fileID);
-    if (fileID) {
-      await File.deleteOne({ _id: fileID });
+    
+    // Check if formData exists and has the requested index
+    if (!doc.formData || !Array.isArray(doc.formData) || recordIndex >= doc.formData.length) {
+      console.log(`Record at index ${recordIndex} not found in formData array`);
+      return res.status(404).json({ error: "Record not found at specified index" });
     }
 
-    doc.formData.splice(id, 1);
+    // Get the file ID to delete
+    let fileID = null;
+    try {
+      const recordData = doc.formData[recordIndex];
+      if (Array.isArray(recordData)) {
+        // Look for an object with fileUploaded property in the array
+        for (const item of recordData) {
+          if (item && typeof item === 'object') {
+            if ('fileUploaded' in item) {
+              fileID = item.fileUploaded;
+              break;
+            }
+          }
+        }
+      } else if (recordData && typeof recordData === 'object') {
+        // If the record is a single object (not an array)
+        if ('fileUploaded' in recordData) {
+          fileID = recordData.fileUploaded;
+        }
+      }
+      
+      console.log(`Extracted fileID: ${fileID || 'None found'} from record`);
+    } catch (err) {
+      console.error("Error extracting file ID:", err);
+      console.error("Record data structure:", JSON.stringify(doc.formData[recordIndex] || null, null, 2));
+      // Continue even if we couldn't get the file ID
+    }
 
+    // Delete the file if we found an ID
+    if (fileID) {
+      try {
+        await File.deleteOne({ _id: fileID });
+        console.log(`Deleted file with ID: ${fileID}`);
+      } catch (fileErr) {
+        console.error("Error deleting file:", fileErr);
+        // Continue even if file deletion fails
+      }
+    }
+
+    // Remove the record from formData
+    doc.formData.splice(recordIndex, 1);
     await doc.save();
+    console.log(`Record successfully deleted, ${doc.formData.length} records remaining`);
 
     res.status(200).json({
       message: "Record and associated file deleted successfully",
@@ -39,9 +92,7 @@ router.post("/delete/:PageID/:id", cors(corsOptions), async (req, res) => {
     });
   } catch (error) {
     console.error("Error during record deletion: ", error);
-    res
-      .status(500)
-      .json({ error: "An error occurred while deleting the record" });
+    res.status(500).json({ error: "An error occurred while deleting the record" });
   }
 });
 router.post('/co-po-mappings', async (req, res) => {
