@@ -46,6 +46,61 @@ router.post('/:PageID', cors(corsOptions), async (req, res) => {
   }
 });
 
+// New endpoint to fetch data for all years for a given PageID
+router.post('/:PageID/all', cors(corsOptions), async (req, res) => {
+  const { PageID } = req.params;
+  const { userID } = req.body;
+  
+  try {
+    // Build the query object - only filter by userID and pageID, no year filter
+    const query = { userID: userID, pageID: PageID };
+    
+    console.log(`All Years Request - PageID: ${PageID}, UserID: ${userID}, Query:`, query);
+    
+    // Find all documents matching the query
+    const data = await Data.find(query);
+    console.log(`Found ${data.length} documents across all years`);
+    
+    // Extract and combine all formData from all years
+    let allFormData = [];
+    
+    data.forEach(item => {
+      if (item.formData && Array.isArray(item.formData)) {
+        // Add the year to each entry for reference
+        const yearData = item.formData.map(entry => {
+          // If entry is array, add year to each item in the array
+          if (Array.isArray(entry)) {
+            // Add a year field to the last object in the array (assuming fileUploaded is there)
+            const lastIndex = entry.length - 1;
+            const yearObj = { yearAdded: item.year };
+            entry.splice(lastIndex, 0, yearObj);
+            return entry;
+          }
+          return entry;
+        });
+        
+        allFormData = [...allFormData, ...yearData];
+      }
+    });
+    
+    console.log(`Combined ${allFormData.length} entries from all years`);
+    
+    // Sort by most recent entries first (assuming timestamp might be present)
+    allFormData.sort((a, b) => {
+      // If entries have timestamps, sort by timestamp
+      if (a.timestamp && b.timestamp) {
+        return new Date(b.timestamp) - new Date(a.timestamp);
+      }
+      return 0; // Keep original order if no timestamp
+    });
+    
+    res.status(200).json(allFormData);
+  } catch (error) {
+    console.error('Error during all years form data reading: ', error);
+    res.status(500).json({ error: 'An error occurred while retrieving data for all years' });
+  }
+});
+
 router.post('/multipage', cors(corsOptions), async (req, res) => {
   const { userID, pageIDs, year } = req.body;
     
