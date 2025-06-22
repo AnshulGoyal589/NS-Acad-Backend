@@ -1,5 +1,3 @@
-// BACKEND SOLUTION - Replace your CORS configuration with this:
-
 const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
@@ -26,63 +24,46 @@ mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopol
     process.exit(1);
   });
 
-// CORS Configuration - PLACE THIS BEFORE OTHER MIDDLEWARE
+// CORS Configuration - ONLY allow production frontend
 const corsOptions = {
-  origin: function (origin, callback) {
-    // Allow these origins
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'https://ns-acad-frontend-copy.vercel.app'
-    ];
-    
-    // Allow requests with no origin (mobile apps, Postman, etc.)
-    if (!origin) {
-      return callback(null, true);
-    }
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.log(`CORS blocked origin: ${origin}`);
-      callback(new Error(`Origin ${origin} not allowed by CORS`));
-    }
-  },
+  origin: 'https://ns-acad-frontend-copy.vercel.app',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: [
     'Origin',
-    'X-Requested-With', 
-    'Content-Type', 
+    'X-Requested-With',
+    'Content-Type',
     'Accept',
     'Authorization',
     'Cache-Control'
   ],
   exposedHeaders: ['Set-Cookie'],
-  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+  optionsSuccessStatus: 200
 };
 
-// Apply CORS before other middleware
+console.log('CORS configured for:', corsOptions.origin);
+
+// Apply CORS before any other middleware
 app.use(cors(corsOptions));
 
-// Handle preflight requests explicitly
+// Handle preflight requests
 app.options('*', cors(corsOptions));
 
-// Session configuration
+// Session configuration for production
 const sessionConfig = { 
-  secret: 'weneedagoodsecret',
+  secret: process.env.SESSION_SECRET || 'weneedagoodsecret',
   resave: false,
-  saveUninitialized: false, // Changed to false for better security
+  saveUninitialized: false,
   cookie: {
     maxAge: 7 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+    secure: true, // Always true for production (HTTPS)
+    sameSite: 'none' // Required for cross-origin cookies
   }
 };
 
-// Middleware order is important
-app.use(cookieParser('weneedagoodsecret'));
+// Apply middleware
+app.use(cookieParser(process.env.SESSION_SECRET || 'weneedagoodsecret'));
 app.use(session(sessionConfig));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
@@ -96,11 +77,12 @@ passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser()); 
 passport.deserializeUser(User.deserializeUser());
 
-// Test route to verify CORS
+// Test route
 app.get('/test-cors', (req, res) => {
   res.json({ 
-    message: 'CORS is working!', 
+    message: 'CORS working - Production only!',
     origin: req.get('Origin'),
+    allowedOrigin: corsOptions.origin,
     timestamp: new Date().toISOString()
   });
 });
@@ -120,46 +102,7 @@ app.use('/file', fileApi);
 app.use('/update', updateApi);
 app.use('/api/assessments', assessmentRoutes);
 
-// Error handling middleware
-app.use((error, req, res, next) => {
-  if (error.message.includes('CORS')) {
-    console.log('CORS Error:', error.message);
-    res.status(403).json({ error: 'CORS policy violation' });
-  } else {
-    next(error);
-  }
-});
-
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`CORS allows only: ${corsOptions.origin}`);
 });
-
-// FRONTEND SOLUTION - Make sure your fetch requests look like this:
-
-/*
-// Frontend fetch example:
-const loginUser = async (credentials) => {
-  try {
-    const response = await fetch('https://ns-acad-backend.onrender.com/auth/login', {
-      method: 'POST',
-      credentials: 'include', // CRUCIAL for cookies/sessions
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(credentials)
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Login error:', error);
-    throw error;
-  }
-};
-*/
