@@ -7,7 +7,7 @@ const User = require("../models/User");           // Adjust path if needed
 
 // Configure CORS - Adjust origin as necessary for production
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN || "http://localhost:5173", // Use env variable or default
+    origin: process.env.FRONTEND_URL || "http://localhost:5173", // Use env variable or default
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     credentials: true, // If you need cookies or authorization headers
     optionsSuccessStatus: 200
