@@ -35,7 +35,8 @@ const sessionConfig = {
 
 app.use(cors({
   // origin: 'http://localhost:5173',
-  origin: 'https://ns-acad-frontend-copy.vercel.app',
+  // origin: 'https://ns-acad-frontend-copy.vercel.app',
+  origin: '*',
   credentials: true, 
 }));
 
