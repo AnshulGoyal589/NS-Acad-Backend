@@ -10,11 +10,9 @@ const User = require("./models/User");
 const cors = require('cors');
 const multer = require('multer');
 require('dotenv').config();   
-
 const port = process.env.PORT || 8000;
   
 const upload = multer();
-
 mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => {
     console.log('Connected to the database');
@@ -29,27 +27,33 @@ const sessionConfig = {
   resave: false,
   saveUninitialized: true,
   cookie: {
-    maxAge: 7 * 24 * 60 * 60 * 1000
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    secure: process.env.NODE_ENV === 'production', // Only secure in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax' // Allow cross-site in production
   }
 };
 
+// CORS configuration - specify allowed origins explicitly
 const allowedOrigins = [
   'http://localhost:5173',
   'https://ns-acad-frontend-copy.vercel.app'
 ];
 
 app.use(cors({
-  origin: function(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-
-
 
 app.use(cookieParser('weneedagoodsecret'));
 app.use(session(sessionConfig));
@@ -57,12 +61,9 @@ app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(upload.any());
-
-
 app.use(passport.initialize()); 
 app.use(passport.session());
  
-
 passport.use(new LocalStrategy(User.authenticate()));
 passport.serializeUser(User.serializeUser()); 
 passport.deserializeUser(User.deserializeUser());
@@ -84,4 +85,3 @@ app.use('/api/assessments', assessmentRoutes);
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`); 
 });
- 
