@@ -46,6 +46,17 @@ router.post('/:PageID', cors(corsOptions), async (req, res) => {
   }
 });
 
+router.get('/allData', cors(corsOptions), async (req, res) => {
+  const { userId } = req.query;
+  try {
+    const data = await Data.find({ userID: userId });
+    res.status(200).json(data);
+  } catch (error) {
+    console.error('Error fetching all data for user:', error);
+    res.status(500).json({ error: 'An error occurred while retrieving all data for user' });
+  }
+});
+
 // New endpoint to fetch data for all years for a given PageID
 router.post('/:PageID/all', cors(corsOptions), async (req, res) => {
   const { PageID } = req.params;

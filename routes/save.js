@@ -9,7 +9,7 @@ const CoPoMapping = require("../models/CoPoMapping");
 require("dotenv").config();
 
 const corsOptions = {
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  origin: process.env.FRONTEND_URL,
 };
 
 router.post("/delete/:PageID/:id", cors(corsOptions), async (req, res) => {
