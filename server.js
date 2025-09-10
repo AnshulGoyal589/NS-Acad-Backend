@@ -23,7 +23,7 @@ mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopol
   });
 
 const corsOptions = {
-  origin: ['https://ns-acad-frontend-copy.vercel.app', 'http://localhost:5173'],
+  origin: ['https://ns-acad-frontend.vercel.app', 'http://localhost:5173'],
   credentials: true, // Allow cookies to be sent
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: [
