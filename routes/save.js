@@ -26,19 +26,19 @@ router.post("/delete/:PageID/:id", cors(corsOptions), async (req, res) => {
     // Ensure we have a year
     const academicYear = year || new Date().getFullYear();
     
-    console.log(`Deleting record - PageID: ${PageID}, recordIndex: ${recordIndex}, userID: ${userID}, year: ${academicYear}`);
+    // console.log(`Deleting record - PageID: ${PageID}, recordIndex: ${recordIndex}, userID: ${userID}, year: ${academicYear}`);
 
     // Find the document
     const doc = await Data.findOne({ userID, pageID: PageID, year: academicYear });
 
     if (!doc) {
-      console.log(`Document not found for userID: ${userID}, pageID: ${PageID}, year: ${academicYear}`);
+      // console.log(`Document not found for userID: ${userID}, pageID: ${PageID}, year: ${academicYear}`);
       return res.status(404).json({ error: "Document not found" });
     }
     
     // Check if formData exists and has the requested index
     if (!doc.formData || !Array.isArray(doc.formData) || recordIndex >= doc.formData.length) {
-      console.log(`Record at index ${recordIndex} not found in formData array`);
+      // console.log(`Record at index ${recordIndex} not found in formData array`);
       return res.status(404).json({ error: "Record not found at specified index" });
     }
 
@@ -63,7 +63,7 @@ router.post("/delete/:PageID/:id", cors(corsOptions), async (req, res) => {
         }
       }
       
-      console.log(`Extracted fileID: ${fileID || 'None found'} from record`);
+      // console.log(`Extracted fileID: ${fileID || 'None found'} from record`);
     } catch (err) {
       console.error("Error extracting file ID:", err);
       console.error("Record data structure:", JSON.stringify(doc.formData[recordIndex] || null, null, 2));
@@ -74,7 +74,7 @@ router.post("/delete/:PageID/:id", cors(corsOptions), async (req, res) => {
     if (fileID) {
       try {
         await File.deleteOne({ _id: fileID });
-        console.log(`Deleted file with ID: ${fileID}`);
+        // console.log(`Deleted file with ID: ${fileID}`);
       } catch (fileErr) {
         console.error("Error deleting file:", fileErr);
         // Continue even if file deletion fails
@@ -84,7 +84,7 @@ router.post("/delete/:PageID/:id", cors(corsOptions), async (req, res) => {
     // Remove the record from formData
     doc.formData.splice(recordIndex, 1);
     await doc.save();
-    console.log(`Record successfully deleted, ${doc.formData.length} records remaining`);
+    // console.log(`Record successfully deleted, ${doc.formData.length} records remaining`);
 
     res.status(200).json({
       message: "Record and associated file deleted successfully",
@@ -107,7 +107,7 @@ router.post('/co-po-mappings', async (req, res) => {
       section,
       courseOutcomes
     } = req.body;
-    console.log("CO-PO Mapping Data:", req.body);
+    // console.log("CO-PO Mapping Data:", req.body);
     // Create or update the mapping
     const filter = { subjectCode, academicYear, semester, branch, section };
 

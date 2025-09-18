@@ -22,10 +22,10 @@ router.post('/:PageID', cors(corsOptions), async (req, res) => {
       query.year = parseInt(year, 10);
     }
     
-    console.log(`PageID: ${PageID}, UserID: ${userID}, Year: ${year}, Query:`, query);
+    // console.log(`PageID: ${PageID}, UserID: ${userID}, Year: ${year}, Query:`, query);
     
     const data = await Data.find(query);
-    console.log(`Found Data:`, data);
+    // console.log(`Found Data:`, data);
     
     // Always return an array, even if no data is found
     let formdata = [];
@@ -66,11 +66,11 @@ router.post('/:PageID/all', cors(corsOptions), async (req, res) => {
     // Build the query object - only filter by userID and pageID, no year filter
     const query = { userID: userID, pageID: PageID };
     
-    console.log(`All Years Request - PageID: ${PageID}, UserID: ${userID}, Query:`, query);
+    // console.log(`All Years Request - PageID: ${PageID}, UserID: ${userID}, Query:`, query);
     
     // Find all documents matching the query
     const data = await Data.find(query);
-    console.log(`Found ${data.length} documents across all years`);
+    // console.log(`Found ${data.length} documents across all years`);
     
     // Extract and combine all formData from all years
     let allFormData = [];
@@ -94,7 +94,7 @@ router.post('/:PageID/all', cors(corsOptions), async (req, res) => {
       }
     });
     
-    console.log(`Combined ${allFormData.length} entries from all years`);
+    // console.log(`Combined ${allFormData.length} entries from all years`);
     
     // Sort by most recent entries first (assuming timestamp might be present)
     allFormData.sort((a, b) => {
@@ -151,7 +151,7 @@ router.post('/faculty/list', cors(corsOptions), async (req, res) => {
       department,
       role: 'faculty'
     }).select('fullname email username');
-    console.log(facultyMembers);
+    // console.log(facultyMembers);
     res.status(200).json(facultyMembers);
   } catch (error) {
     console.error('Error fetching faculty list:', error); 
@@ -226,7 +226,7 @@ router.post('/faculty/details', cors(corsOptions), async (req, res) => {
     }
    
     const data = await Data.find(query);
-    console.log("Faculty Data:", data);
+    // console.log("Faculty Data:", data);
     res.status(200).json(data);
   
   } catch (error) {
@@ -238,7 +238,7 @@ router.post('/faculty/details', cors(corsOptions), async (req, res) => {
 // New endpoint to fetch all department documents for a specific year
 router.post('/department/documents', cors(corsOptions), async (req, res) => {
   const { department, year, pageIDs } = req.body;
-  console.log("Department:", department, "Year:", year, "PageIDs:", pageIDs);
+  // console.log("Department:", department, "Year:", year, "PageIDs:", pageIDs);
   try {
     // Validate required parameters
     if (!department) {
@@ -251,7 +251,7 @@ router.post('/department/documents', cors(corsOptions), async (req, res) => {
       role: 'faculty'
     }).select('username fullname email');
     
-    console.log(facultyMembers);
+    // console.log(facultyMembers);
     
     if (!facultyMembers || facultyMembers.length === 0) {
       return res.status(404).json({ error: 'No faculty members found in this department' });
@@ -285,11 +285,11 @@ router.post('/department/documents', cors(corsOptions), async (req, res) => {
       query.pageID = { $in: pageIDs };
     }
     
-    console.log('Query:', JSON.stringify(query));
+    // console.log('Query:', JSON.stringify(query));
     
     // Find all documents matching the criteria - simplified from faculty/details
     const documents = await Data.find(query);
-    console.log(`Found ${documents.length} documents`);
+    // console.log(`Found ${documents.length} documents`);
     
     // Format the documents with faculty information
     const enhancedDocuments = documents.map(doc => {
@@ -450,7 +450,7 @@ router.post('/department/documents', cors(corsOptions), async (req, res) => {
 
 router.post('/hod/dashboard/documents', cors(corsOptions), async (req, res) => {
   const { department, year, userId } = req.body;
-  console.log("Dashboard request - Department:", department, "Year:", year, "UserId:", userId);
+  // console.log("Dashboard request - Department:", department, "Year:", year, "UserId:", userId);
   
   try {
     let query = {};
@@ -489,11 +489,11 @@ router.post('/hod/dashboard/documents', cors(corsOptions), async (req, res) => {
       query.year = parseInt(year, 10);
     }
 
-    console.log("Document query:", JSON.stringify(query));
+    // console.log("Document query:", JSON.stringify(query));
 
     // Fetch documents
     const documents = await Data.find(query);
-    console.log(`Found ${documents.length} documents`);
+    // console.log(`Found ${documents.length} documents`);
 
     // Format response, ensuring year is included
     const formattedDocs = documents.map(doc => ({
@@ -525,16 +525,16 @@ router.get('/co-po-mappings', async (req, res) => {
       return res.status(400).json({ message: 'Subject code query parameter is required.' });
     }
 
-    console.log('Searching for mappings with subjectCode:', subjectCodeParam);
+    // console.log('Searching for mappings with subjectCode:', subjectCodeParam);
 
     const mappings = await CoPoMapping.find({ subjectCode: subjectCodeParam });
 
     if (!mappings || mappings.length === 0) {
-      console.log('No mappings found for subject code:', subjectCodeParam);
+      // console.log('No mappings found for subject code:', subjectCodeParam);
       return res.status(404).json({ message: `No CO-PO mappings found for subject code: ${subjectCodeParam}` });
     }
 
-    console.log(`Found ${mappings.length} mapping(s) for subject code: ${subjectCodeParam}`);
+    // console.log(`Found ${mappings.length} mapping(s) for subject code: ${subjectCodeParam}`);
     res.status(200).json(mappings);
 
   } catch (error) {
@@ -551,7 +551,7 @@ router.get('/copomap', async (req, res) => {
       return res.status(404).json({ message: 'No CO-PO mappings found in the database.' });
     }
 
-    console.log(`Fetched ${mappings.length} CO-PO mapping(s) from database:`);
+    // console.log(`Fetched ${mappings.length} CO-PO mapping(s) from database:`);
     console.dir(mappings, { depth: null }); // Logs full structure
 
     res.status(200).json(mappings); // Return all mappings to client
