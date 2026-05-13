@@ -111,6 +111,7 @@ const fileApi = require('./routes/file.js');
 const updateApi = require('./routes/update.js');
 const assessmentRoutes = require('./routes/assessments');
 const copoRoutes = require('./routes/copo');
+const analyticsRoutes = require('./routes/analytics');
 
 app.use('/auth', authApi);
 app.use('/save', saveApi);
@@ -119,6 +120,7 @@ app.use('/file', fileApi);
 app.use('/update', updateApi);
 app.use('/api/assessments', assessmentRoutes);
 app.use('/api/copo', copoRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // --- Server Start ---
 app.listen(port, () => {

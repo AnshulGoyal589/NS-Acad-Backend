@@ -124,18 +124,24 @@ function extractTcaCoMarks(assessment) {
             if (!tca.marks) continue;
 
             // tca.marks is a Map of partIdentifier -> { value, coDistribution }
-            const marksEntries = tca.marks instanceof Map
-                ? Array.from(tca.marks.entries())
-                : Object.entries(tca.marks);
+            const rawMarks = tca.marks && typeof tca.marks.toObject === 'function' ? tca.marks.toObject() : tca.marks;
+            const marksEntries = rawMarks instanceof Map
+                ? Array.from(rawMarks.entries())
+                : Object.entries(rawMarks || {});
 
             for (const [partKey, partData] of marksEntries) {
+                // Skip Mongoose internal keys
+                if (partKey.startsWith('$') || partKey.startsWith('_')) continue;
                 if (!partData || !partData.coDistribution) continue;
 
-                const coDist = partData.coDistribution instanceof Map
-                    ? Object.fromEntries(partData.coDistribution)
-                    : partData.coDistribution;
+                const rawDist = partData.coDistribution && typeof partData.coDistribution.toObject === 'function'
+                    ? partData.coDistribution.toObject()
+                    : (partData.coDistribution instanceof Map ? Object.fromEntries(partData.coDistribution) : partData.coDistribution);
 
-                for (const [coKey, coValue] of Object.entries(coDist)) {
+                for (const [coKey, coValue] of Object.entries(rawDist || {})) {
+                    // Skip Mongoose internal properties
+                    if (coKey.startsWith('$') || coKey.startsWith('_')) continue;
+                    if (!/^co\d+$/i.test(coKey)) continue; // Only allow CO1, CO2, etc.
                     const coId = coKey.toUpperCase();
                     const marks = Number(coValue) || 0;
 
@@ -234,7 +240,7 @@ router.post('/calculate-co', async (req, res) => {
         };
         if (facultyId) assessmentQuery.facultyId = facultyId;
 
-        const assessments = await Assessment.find(assessmentQuery);
+        const assessments = await Assessment.find(assessmentQuery).lean();
 
         if (!assessments || assessments.length === 0) {
             return res.status(404).json({ error: 'No assessment data found for this subject/class combination.' });
